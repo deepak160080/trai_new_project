@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1066387393535",
+    "project_id": "trai-flutter-demo",
+    "storage_bucket": "trai-flutter-demo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066387393535:android:bc7d0f55cac6894baeb5ca",
+        "android_client_info": {
+          "package_name": "app.trai.trai_flutterdemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaPOmf9lVGoOGhKKceRTjCT5TcJdIj5dM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066387393535:android:0be6a95efd3b3047aeb5ca",
+        "android_client_info": {
+          "package_name": "com.trai.ui"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaPOmf9lVGoOGhKKceRTjCT5TcJdIj5dM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
