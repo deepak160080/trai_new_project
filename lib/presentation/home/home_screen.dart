@@ -11,6 +11,7 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
   int _selectedIndex = 0;
   bool _isDrawerOpen = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(icon: Icons.home, label: 'Home', 
@@ -30,64 +31,191 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
   ];
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+
+
+  @override
   Widget build(BuildContext context) {
     final bool isDesktop = MediaQuery.of(context).size.width >= 1200;
     
     return Scaffold(
       key: _scaffoldKey,
-      drawer: isDesktop ? null : _buildDrawer(),
-      body: Row(
+      body: Column(
         children: [
-          NavigationRail(
-            selectedIndex: _selectedIndex,
-            extended: false,
-            minWidth: 72,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-                if (!isDesktop) {
-                  _scaffoldKey.currentState?.openDrawer();
-                } else {
-                  _isDrawerOpen = true;
-                }
-              });
-            },
-            leading: _buildNavigationRailLeading(isDesktop),
-            destinations: _navigationItems
-                .map((item) => NavigationRailDestination(
-                      icon: Icon(item.icon),
-                      label: Text(item.label),
-                    ))
-                .toList(),
-          ),
-
-          if (_isDrawerOpen && isDesktop)
-            Container(
-              width: 320,
-              decoration: BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.grey.shade200),
-                ),
-              ),
-              child: _buildFeaturesList(isDesktop),
-            ),
-
+          _buildTopBar(),
           Expanded(
-            child: Container(
-              color: Colors.grey.shade50,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopBar(),
-                  Expanded(
+            child: Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  extended: false,
+                  minWidth: 72,
+                  onDestinationSelected: (int index) {
+                    setState(() {
+                      _selectedIndex = index;
+                      if (!isDesktop) {
+                        _scaffoldKey.currentState?.openDrawer();
+                      } else {
+                        _isDrawerOpen = true;
+                      }
+                    });
+                  },
+                  leading: _buildNavigationRailLeading(isDesktop),
+                  destinations: _navigationItems
+                      .map((item) => NavigationRailDestination(
+                            icon: Icon(item.icon),
+                            label: Text(item.label),
+                          ))
+                      .toList(),
+                ),
+                
+                if (_isDrawerOpen && isDesktop)
+                  Container(
+                    width: 320,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      color: Colors.white,
+                    ),
+                    child: _buildFeaturesList(isDesktop),
+                  ),
+                
+                Expanded(
+                  child: Container(
+                    color: Colors.grey.shade50,
                     child: _buildMainContent(),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
       ),
+      drawer: !isDesktop ? Drawer(child: _buildFeaturesList(false)) : null,
+    );
+  }  Widget _buildTopBar() {
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search projects...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.purple),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(left: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_none),
+                  onPressed: () {},
+                  tooltip: 'Notifications',
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {},
+                  tooltip: 'Settings',
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.purple.shade100,
+                  child: const Icon(Icons.person_outline, color: Colors.purple),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    String? badge,
+  }) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          icon: Icon(icon),
+          onPressed: onPressed,
+          tooltip: tooltip,
+          splashRadius: 24,
+        ),
+        if (badge != null)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                badge,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -153,7 +281,6 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
   }
 
   void _handleActionSelected(String action) {
-    // Handle the action selection
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Selected action: $action')),
     );
@@ -331,41 +458,7 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildTopBar() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search projects...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          IconButton(icon: const Icon(Icons.notifications_none), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
-          CircleAvatar(
-            backgroundColor: Colors.purple.shade100,
-            child: const Icon(Icons.person_outline, color: Colors.purple),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildMainContent() {
     return Padding(
