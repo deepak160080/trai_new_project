@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:intl/intl.dart';
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -16,6 +18,369 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
   final LayerLink _profileLayerLink = LayerLink();
   OverlayEntry? _profileOverlayEntry;
 
+// Add these variables to _ProjectsPageState class
+Timer? _breakTimer;
+DateTime? _breakStartTime;
+int _elapsedSeconds = 0;
+bool _isOnBreak = false;
+
+// Add this method to _ProjectsPageState class
+void _startBreak(String breakType) {
+  setState(() {
+    _isOnBreak = true;
+    _breakStartTime = DateTime.now();
+    _startBreakTimer();
+  });
+  
+  // Update the UI to show break status
+  _showBreakConfirmation(breakType);
+}
+
+void _startBreakTimer() {
+  _breakTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    if (_breakStartTime != null) {
+      setState(() {
+        _elapsedSeconds = DateTime.now().difference(_breakStartTime!).inSeconds;
+      });
+    }
+  });
+}
+
+void _endBreak() {
+  _breakTimer?.cancel();
+  setState(() {
+    _isOnBreak = false;
+    _breakStartTime = null;
+    _elapsedSeconds = 0;
+  });
+}
+
+void _showEndShiftDialog() {
+  final startTime = _breakStartTime ?? DateTime.now();
+  final totalTime = DateTime.now().difference(startTime);
+  
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'End Shift',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${totalTime.inMinutes}m',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Text(
+                          'Total Shift Time',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Start time',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('hh:mm a').format(startTime),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'End time',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('hh:mm a').format(DateTime.now()),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Comment',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Colors.purple),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Handle end shift logic here
+                      Navigator.of(context).pop();
+                      _endBreak();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('End Shift'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// Update the _showBreakConfirmation method
+void _showBreakConfirmation(String breakType) {
+  Navigator.of(context).pop(); // Close break type dialog
+  _removeProfileOverlay(); // Close profile overlay
+  
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Changed to false to prevent dismissal while on break
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isOnBreak) ...[
+                Text(
+                  '${(_elapsedSeconds / 60).floor()}m taken of your break',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _endBreak();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('End Break'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _showEndShiftDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('End Shift'),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Handle edit shift logic
+                  },
+                  child: const Text('Edit shift'),
+                ),
+              ] else ...[
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.timer,
+                    size: 50,
+                    color: Colors.green.shade600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Starting $breakType',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Break started at ${DateFormat('hh:mm a').format(DateTime.now())}',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// Update the _buildProfileOverlay method to include break status
+Widget _buildProfileStatus() {
+  if (_isOnBreak) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'On Break',
+            style: TextStyle(
+              color: Colors.orange.shade700,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.green.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'On Shift',
+          style: TextStyle(
+            color: Colors.green,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    ),
+  );
+}
   final List<NavigationItem> _navigationItems = [
     NavigationItem(icon: Icons.home, label: 'Home', 
       actions: ['Create Dashboard', 'View Analytics', 'Manage Settings']),
@@ -55,6 +420,7 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
     _profileOverlayEntry?.remove();
     _profileOverlayEntry = null;
   }
+
 
 
   void _showProfileOverlay() {
@@ -244,69 +610,69 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
     overlayState.insert(_profileOverlayEntry!);
   }
 
-  void _showBreakConfirmation(String breakType) {
-    Navigator.of(context).pop(); // Close break type dialog
-    _removeProfileOverlay(); // Close profile overlay
+  // void _showBreakConfirmation(String breakType) {
+  //   Navigator.of(context).pop(); // Close break type dialog
+  //   _removeProfileOverlay(); // Close profile overlay
     
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.thumb_up,
-                    size: 50,
-                    color: Colors.green.shade600,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Enjoy your ${breakType.toLowerCase()}!',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'See you back soon.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         child: Container(
+  //           padding: const EdgeInsets.all(24),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Align(
+  //                 alignment: Alignment.topRight,
+  //                 child: IconButton(
+  //                   icon: const Icon(Icons.close),
+  //                   onPressed: () => Navigator.of(context).pop(),
+  //                   padding: EdgeInsets.zero,
+  //                   constraints: const BoxConstraints(),
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               Container(
+  //                 width: 100,
+  //                 height: 100,
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.green.shade100,
+  //                   shape: BoxShape.circle,
+  //                 ),
+  //                 child: Icon(
+  //                   Icons.thumb_up,
+  //                   size: 50,
+  //                   color: Colors.green.shade600,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 24),
+  //               Text(
+  //                 'Enjoy your ${breakType.toLowerCase()}!',
+  //                 style: const TextStyle(
+  //                   fontSize: 20,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 8),
+  //               const Text(
+  //                 'See you back soon.',
+  //                 style: TextStyle(
+  //                   color: Colors.grey,
+  //                   fontSize: 16,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showBreakDialog() {
     showDialog(
@@ -457,7 +823,9 @@ class _ProjectsPageState extends State<ProjectsPage> with SingleTickerProviderSt
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: (){
+                        _startBreak("");
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
